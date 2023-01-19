@@ -19,11 +19,13 @@ print(ownerTelegramId)
 
 usersMessageDictionary = {}
 
+
 @dp.message_handler()
 async def echo_message(message: types.Message):
-    print(datetime.now(),"[INFO] message from", message.chat.id, "message text:", message.text)
+    print(datetime.now(), "[INFO] message from", message.chat.id, "message text:", message.text)
     if message.text == '/start':
-        await bot.send_message(message.chat.id, "Hi, nice to meet you. You will talk with chatGPT by OpenAi. Start messaging")
+        await bot.send_message(message.chat.id,
+                               "Hi, nice to meet you. You will talk with chatGPT by OpenAi. Start messaging")
         usersMessageDictionary[message.chat.id] = ''
 
     elif message.text == '/clear':
@@ -44,11 +46,13 @@ async def echo_message(message: types.Message):
                 message.text) + "\nFriend:"
             print('Ok2')
 
-        gpt_answer = open_ai_response(usersMessageDictionary[message.chat.id])
-        await bot.send_message(message.chat.id, gpt_answer)
-
-        usersMessageDictionary[message.chat.id] = usersMessageDictionary[message.chat.id] + gpt_answer
-        print(usersMessageDictionary)
+        try:
+            gpt_answer = open_ai_response(usersMessageDictionary[message.chat.id])
+            await bot.send_message(message.chat.id, gpt_answer)
+            usersMessageDictionary[message.chat.id] = usersMessageDictionary[message.chat.id] + gpt_answer
+            print(usersMessageDictionary)
+        except openai.OpenAIError as ae:
+            await message.reply("[ERROR MESSAGE]\n\n" + ae.error)
 
 
 totalTokens = 0
@@ -73,4 +77,3 @@ def open_ai_response(message: str):
 
 
 executor.start_polling(dp, skip_updates=True)
-
