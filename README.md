@@ -19,16 +19,3 @@ pip install aiogram
 pip install openai
 ```
 ## 4. Create application.ini in resources folder. Paste bot token and openAI API key there
-___
-__BOLD__ | _Cursive_ | ___CursiveBold___
----
-***
-
->Quote
->> Inner quote
-
-[link to google](https://google.com)
-
-[^1] FootnoteText1 [^2] footnote Text 2
-[^1]: 123
-[^2]: qwer
