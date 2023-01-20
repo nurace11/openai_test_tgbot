@@ -5,25 +5,9 @@ import openai
 from googletrans import Translator
 from googletrans import Translator
 
-# translator = Translator()
-# print(translator.detect('Я последняя буква в алфавите'))
-#
-# text = "Я не жалуюсь"
-# detected = translator.detect(text)
-# print(detected.lang)
-#
-# textToSend = text
-# if detected.lang != 'en':
-#     textToSend = translator.translate(text).text
-#     print(translator.translate(text).text)
-#
-# print(textToSend)
-# print(type(translator.translate("Как твои дела")))
-
 translator = Translator()
 
 
-# @dp.message_handler()
 async def echo_message(message: types.Message):
     print('echo_message')
     print(datetime.now(), "[INFO] message from", message.chat.id, "message text:", message.text)
@@ -57,16 +41,13 @@ async def echo_message(message: types.Message):
         try:
             gpt_answer = open_ai_response(usersMessageDictionary[message.chat.id])
             if lang != 'en':
-                translated_gpt_answer = translator.translate(gpt_answer, dest=lang).text
-                await bot.send_message(message.chat.id, translated_gpt_answer)
-                usersMessageDictionary[message.chat.id] = usersMessageDictionary[message.chat.id] + gpt_answer
-                print(usersMessageDictionary)
+                gpt_answer_to_send = translator.translate(gpt_answer, dest=lang).text
             else:
-                await bot.send_message(message.chat.id, gpt_answer)
-                usersMessageDictionary[message.chat.id] = usersMessageDictionary[message.chat.id] + gpt_answer
-                print(usersMessageDictionary)
+                gpt_answer_to_send = gpt_answer
 
-
+            await bot.send_message(message.chat.id, gpt_answer_to_send)
+            usersMessageDictionary[message.chat.id] = usersMessageDictionary[message.chat.id] + gpt_answer
+            print(usersMessageDictionary)
         except openai.OpenAIError as ae:
             await message.reply("[ERROR MESSAGE]\n\n" + ae.error)
 
