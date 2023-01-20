@@ -9,7 +9,7 @@ async def on_startup(_): # add this method in the executor.start_polling(on_star
 from main import adminHandler, clientHandler, commonHandler
 
 clientHandler.register_handlers_client(dp)
+adminHandler.register_handlers_admin(dp)
 commonHandler.register_handlers_common(dp)
-
 
 executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
