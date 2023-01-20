@@ -73,13 +73,15 @@ async def cancel_adding_product_handler(message: types.Message, state: FSMContex
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(cm_start, commands=['load'], state=None)
 
+    dp.register_message_handler(cancel_adding_product_handler, state='*', commands='cancel')
+    dp.register_message_handler(cancel_adding_product_handler, Text(equals='cancel', ignore_case=True),state='*')
+
     dp.register_message_handler(load_photo, content_types=['photo'], state=FSMAdmin.photo)
     dp.register_message_handler(load_name, state=FSMAdmin.name)
     dp.register_message_handler(load_desc, state=FSMAdmin.description)
     dp.register_message_handler(load_price, state=FSMAdmin.price)
 
-    dp.register_message_handler(cancel_adding_product_handler, state='*', commands='cancel')
-    dp.register_message_handler(cancel_adding_product_handler, Text(equals='cancel', ignore_case=True),state='*')
+
 
 
 
