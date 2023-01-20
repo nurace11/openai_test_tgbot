@@ -3,7 +3,6 @@ from datetime import datetime
 from create_bot import usersMessageDictionary, bot, dp, ownerTelegramId
 import openai
 from googletrans import Translator
-from googletrans import Translator
 
 translator = Translator()
 
@@ -22,10 +21,11 @@ async def echo_message(message: types.Message):
 
     else:
         lang = translator.detect(message.text).lang
+        print("Lang: ", lang)
 
-        if lang != 'en':
+        if lang != 'en' and type(lang) is not list:
             message_to_send = translator.translate(message.text).text
-            print("GOOGLE TRANSLATED:", message_to_send)
+            print("[TRANSLATED] ", message_to_send )
         else:
             message_to_send = message.text
 
@@ -40,7 +40,7 @@ async def echo_message(message: types.Message):
 
         try:
             gpt_answer = open_ai_response(usersMessageDictionary[message.chat.id])
-            if lang != 'en':
+            if lang != 'en' and type(lang) is not list:
                 gpt_answer_to_send = translator.translate(gpt_answer, dest=lang).text
             else:
                 gpt_answer_to_send = gpt_answer
@@ -64,8 +64,7 @@ def open_ai_response(message: str):
         stop=["You:"]
     )
 
-    print(response)
-    # totalTokens = int(response['usage']['total_tokens'])
+    print(response['usage'], response['choices'][0]['text'])
 
     return response['choices'][0]['text']
 
