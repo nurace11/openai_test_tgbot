@@ -1,4 +1,5 @@
 resources/application.ini
 .idea
 notes
+testspc.py
 tests.py
