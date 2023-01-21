@@ -17,5 +17,6 @@ ___
 ```
 pip install aiogram
 pip install openai
+pip install googletrans==3.1.0.a0 Pillow 
 ```
 ## 4. Create application.ini in resources folder. Paste bot token and openAI API key there
