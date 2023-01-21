@@ -26,7 +26,7 @@ def define_tg_user(message: types.Message):
 
 
 async def friend_chat_message_handler(message: types.Message):
-    print('[FRIEND CHAT MESSAGE] From:', message.from_user.id, 'In chat', message.chat.id, 'text:', message.text)
+    print(datetime.now(), '[FRIEND CHAT MESSAGE] From:', message.from_user.id, 'In chat', message.chat.id, 'text:', message.text)
     define_tg_user(message)
 
     lang = translator.detect(message.text).lang
@@ -53,8 +53,8 @@ async def friend_chat_message_handler(message: types.Message):
         await bot.send_message(message.chat.id, gpt_answer_to_send)
         tg_user.chat_history += gpt_answer
 
-    except openai.OpenAIError as ae:
-        await message.reply("[ERROR MESSAGE]\n\n" + ae.error)
+    except openai.error.OpenAIError as ae:
+        await message.reply("[ERROR MESSAGE]\n\n" + ae.user_message)
 
 
 def open_ai_response(user: TgUser):

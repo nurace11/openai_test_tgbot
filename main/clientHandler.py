@@ -13,6 +13,7 @@ async def command_clear(message: types.Message):
     for user in usersDatabase:
         if message.chat.id == user.tg_id:
             user.completion = openai.Completion()
+            user.all_time_tokens += user.completion_tokens
             user.completion_tokens = 0
             user.chat_history = ''
             await message.reply("[AMOGUS INFO MESSAGE] \n\nYour chat has been cleared. Thank you")
