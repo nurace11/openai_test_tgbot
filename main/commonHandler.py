@@ -22,7 +22,7 @@ def define_tg_user(message: types.Message):
 
     if not found:
         tg_user = TgUser(message.from_user.id, openai.Completion(), "")
-        usersDatabase.append(tg_user)
+        usersDatabase.add(tg_user)
 
 
 async def friend_chat_message_handler(message: types.Message):

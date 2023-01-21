@@ -7,11 +7,15 @@ config.read('resources/application.ini')
 print(config['OPEN_AI']['KEY'])
 print(config['BOT']['TOKEN'])
 
-openai.api_key = config['OPEN_AI']['KEY']
-try:
-    raise openai.error.InvalidRequestError(message='Mee', param='aa')
-except openai.error.OpenAIError as ae:
-    print('Au' + ae.user_message)
+# openai.api_key = config['OPEN_AI']['KEY']
+# try:
+#     raise openai.error.InvalidRequestError(message='Mee', param='aa')
+# except openai.error.OpenAIError as ae:
+#     print('Au' + ae.user_message)
+
+if not any(1 == u for u in [3,4,2,5]):
+    print("no 1")
+
 
 #
 # completionObj = openai.Completion()

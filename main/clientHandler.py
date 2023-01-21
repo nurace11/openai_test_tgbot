@@ -6,10 +6,12 @@ import openai
 
 async def command_start(message: types.Message):
     print('[START COMMAND]')
-    usersDatabase.append(TgUser(message.from_user.id, openai.Completion(), ""))
+    if not any(message.from_user.id == user.tg_id for user in usersDatabase):
+        usersDatabase.add(TgUser(message.from_user.id, openai.Completion(), ""))
 
 
 async def command_clear(message: types.Message):
+    print(f'[CLEAR COMMAND] {message.from_user.id}')
     for user in usersDatabase:
         if message.chat.id == user.tg_id:
             user.completion = openai.Completion()
@@ -19,9 +21,11 @@ async def command_clear(message: types.Message):
 
 
 async def command_stats(message: types.Message):
+    print(f"[STATS COMMAND] {message.from_user.id}")
     for user in usersDatabase:
         if message.chat.id == user.tg_id:
-            await message.reply("Your current completion tokens: " + str(user.total_tokens) + ". Maximum is 4000" +
+            await message.reply(f"ID{message.chat.id}"
+                                f"\n\nYour current completion tokens: " + str(user.total_tokens) + ". Maximum is 4000" +
                                 "\n\nAll time tokens:" + str(user.all_time_tokens) +
                                 "\n\n1 token ~= 4 letters or 1 token ~= 0.75 words")
 
