@@ -1,8 +1,45 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram import types, Dispatcher
-from create_bot import dp, ownerTelegramId
+from create_bot import dp, ownerTelegramId, usersDatabase
 from aiogram.dispatcher.filters import Text
+
+
+async def print_users_database(message: types.Message):
+
+    if message.from_user.id == ownerTelegramId:
+        text = ''
+        if len(usersDatabase) == 0:
+            text = 'Empty'
+        for user in usersDatabase:
+            text += user.__str__() + "\n\n"
+
+        text += "\n Type /chat [telegram_user_id] to see chat history of certain user"
+
+        await message.reply(text)
+
+
+# /chat
+async def print_user_chat(message: types.Message):
+    if message.from_user.id == ownerTelegramId:
+        if len(message.text) < 6:
+            await message.reply('Type an id')
+            return
+
+        try:
+            chat_id = int(message.text[len('/chat '):])
+            for user in usersDatabase:
+                if chat_id == user.tg_id:
+                    text = f"{chat_id}, chat history: \n\n{user.chat_history}"
+                    await message.reply(text)
+                    return
+
+            await message.reply('Not found')
+        except ValueError as e:
+            await message.reply('Enter valid id. Id contains only numbers')
+
+
+
 
 class FSMAdmin(StatesGroup):
     photo = State()
@@ -72,6 +109,8 @@ async def cancel_adding_product_handler(message: types.Message, state: FSMContex
 
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(cm_start, commands=['load'], state=None)
+    dp.register_message_handler(print_users_database, commands=['database'])
+    dp.register_message_handler(print_user_chat, commands=['chat'])
 
     dp.register_message_handler(cancel_adding_product_handler, state='*', commands='cancel')
     dp.register_message_handler(cancel_adding_product_handler, Text(equals='cancel', ignore_case=True),state='*')

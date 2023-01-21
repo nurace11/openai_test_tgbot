@@ -1,61 +1,66 @@
 from aiogram import types, Dispatcher
 from datetime import datetime
-from create_bot import usersMessageDictionary, bot, dp, ownerTelegramId
+from create_bot import bot, dp, ownerTelegramId, usersDatabase
 import openai
 from googletrans import Translator
+from entity.TgUser import TgUser
+
+# import scheduler
+# import time
 
 translator = Translator()
+tg_user: TgUser
 
 
-async def echo_message(message: types.Message):
-    print('echo_message')
-    print(datetime.now(), "[INFO] message from", message.chat.id, "message text:", message.text)
-    if message.text == '/start':
-        await bot.send_message(message.chat.id,
-                               "Hi, nice to meet you. You will talk with chatGPT by OpenAi. Start messaging")
-        usersMessageDictionary[message.chat.id] = ''
+def define_tg_user(message: types.Message):
+    found: bool = False
+    for user in usersDatabase:
+        if user.tg_id == message.from_user.id:
+            global tg_user
+            tg_user = user
+            found = True
 
-    elif message.text == '/clear_all' and message.chat.id == int(ownerTelegramId):
-        openai.Completion()
-        usersMessageDictionary.clear()
+    if not found:
+        tg_user = TgUser(message.from_user.id, openai.Completion(), "")
+        usersDatabase.append(tg_user)
 
+
+async def friend_chat_message_handler(message: types.Message):
+    print('[FRIEND CHAT MESSAGE] From:', message.from_user.id, 'In chat', message.chat.id, 'text:', message.text)
+    define_tg_user(message)
+
+    lang = translator.detect(message.text).lang
+    print("Lang: ", lang)
+
+    if lang != 'en' and type(lang) is not list:
+        message_to_send = translator.translate(message.text).text
+        print("[TRANSLATED] ", message_to_send)
     else:
-        lang = translator.detect(message.text).lang
-        print("Lang: ", lang)
+        message_to_send = message.text
 
+    if len(tg_user.chat_history) == 0:
+        tg_user.chat_history = f"You:{message_to_send} \nFriend:"
+    else:
+        tg_user.chat_history = tg_user.chat_history + f"\nYou: {message_to_send} \nFriend:"
+
+    try:
+        gpt_answer = open_ai_response(tg_user)
         if lang != 'en' and type(lang) is not list:
-            message_to_send = translator.translate(message.text).text
-            print("[TRANSLATED] ", message_to_send )
+            gpt_answer_to_send = translator.translate(gpt_answer, dest=lang).text
         else:
-            message_to_send = message.text
+            gpt_answer_to_send = gpt_answer
 
-        if message.chat.id in usersMessageDictionary:
-            usersMessageDictionary[message.chat.id] = usersMessageDictionary[message.chat.id] + "\nYou: {}".format(
-                message_to_send) + "\nFriend:"
-            print('Ok1')
-        else:
-            usersMessageDictionary[message.chat.id] = "You: {}".format(
-                message_to_send) + "\nFriend:"
-            print('Ok2')
+        await bot.send_message(message.chat.id, gpt_answer_to_send)
+        tg_user.chat_history += gpt_answer
 
-        try:
-            gpt_answer = open_ai_response(usersMessageDictionary[message.chat.id])
-            if lang != 'en' and type(lang) is not list:
-                gpt_answer_to_send = translator.translate(gpt_answer, dest=lang).text
-            else:
-                gpt_answer_to_send = gpt_answer
-
-            await bot.send_message(message.chat.id, gpt_answer_to_send)
-            usersMessageDictionary[message.chat.id] = usersMessageDictionary[message.chat.id] + gpt_answer
-            print(usersMessageDictionary)
-        except openai.OpenAIError as ae:
-            await message.reply("[ERROR MESSAGE]\n\n" + ae.error)
+    except openai.OpenAIError as ae:
+        await message.reply("[ERROR MESSAGE]\n\n" + ae.error)
 
 
-def open_ai_response(message: str):
-    response = openai.Completion.create(
+def open_ai_response(user: TgUser):
+    response = user.completion.create(
         model="text-davinci-003",
-        prompt=message,
+        prompt=user.chat_history,
         temperature=0.9,
         max_tokens=2000,
         top_p=1.0,
@@ -65,9 +70,9 @@ def open_ai_response(message: str):
     )
 
     print(response['usage'], response['choices'][0]['text'])
-
+    tg_user.completion_tokens = int(response['usage']['total_tokens'])
     return response['choices'][0]['text']
 
 
 def register_handlers_common(dp: Dispatcher):
-    dp.register_message_handler(echo_message)
+    dp.register_message_handler(friend_chat_message_handler)

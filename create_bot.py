@@ -13,4 +13,4 @@ ownerTelegramId = int(config['BOT']['OWNER_ID'])
 bot = Bot(token= config['BOT']['TOKEN'])
 dp = Dispatcher(bot, storage=storage)
 
-usersMessageDictionary = {}
+usersDatabase = list()
