@@ -70,7 +70,8 @@ def open_ai_response(user: TgUser):
     )
 
     print(response['usage'], response['choices'][0]['text'])
-    tg_user.completion_tokens = int(response['usage']['total_tokens'])
+    tg_user.total_tokens = int(response['usage']['total_tokens'])
+    tg_user.all_time_tokens += int(response['usage']['completion_tokens'])
     return response['choices'][0]['text']
 
 
