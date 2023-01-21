@@ -1,5 +1,3 @@
-
-
 from aiogram import types, Dispatcher
 from datetime import datetime
 from create_bot import bot, dp, ownerTelegramId, usersDatabase
@@ -41,46 +39,34 @@ async def friend_chat_message_handler(message: types.Message):
     # Variations
     if len(message.photo) > 0:
         print("[VARIATIONS]")
-        file = await bot.get_file(message.photo[3].file_id)
-        print(file, type(file))
-        print(file.file_path)
-
-        # TODO: check if photo[3] size >= 256 and make sure photo is square
-        #       resize to required resolution with Pillow
-        #         if message.photo[3].width / message.photo[3].height == 1:
-
-        if (message.photo[3].width != 256 and message.photo[3].height != 256) \
-                and (message.photo[3].width != 512 and message.photo[3].height != 512) \
-                and (message.photo[3].width != 1024 and message.photo[3].height != 1024):
-            # crop
-            await message.reply("Photo must be 256x256 or 512x512 or 1024x1024 resolution, less than 4MB"
-                                " and in PNG format")
-            return
-
         await message.reply("Wait a minute...")
-        if message.photo[3].height == 256:
-            size = "256x256"
-        elif message.photo[3].height == 512:
-            size = "512x512"
-        else:
-            size = "1024x1024"
+
+        last_index = len(message.photo) - 1
+        consumed_photo = message.photo[last_index]
+        file = await bot.get_file(consumed_photo.file_id)
 
         await bot.download_file(file.file_path, 'resources/images/from_tg.jpg')
+        im1 = Image.open(r'resources/images/from_tg.jpg')
+
+        if not is_square(im1):
+            im1 = resize_image(im1, 1024)
 
         # convert to png using Pillow
-        im1 = Image.open(r'resources/images/from_tg.jpg')
         im1.save(r'resources/images/test.png')
 
-        response = openai.Image.create_variation(
+        size = "1024x1024"
+
+        response = await openai.Image.acreate_variation(
             image=open('resources/images/test.png', "rb"),
             n=1,
             size=size
         )
 
         await bot.send_photo(message.chat.id, photo=response['data'][0]['url'])
+
     # Generate image
     elif message.text.lower().startswith('image '):
-        response = openai.Image.create(
+        response = await openai.Image.acreate(
             prompt=message.text[6:],
             n=1,
             size="1024x1024"
@@ -101,7 +87,7 @@ async def friend_chat_message_handler(message: types.Message):
             tg_user.chat_history = tg_user.chat_history + f"\nYou: {message_to_send} \nFriend:"
 
         try:
-            gpt_answer = open_ai_response(tg_user)
+            gpt_answer = await open_ai_response(tg_user)
             if lang != 'en' and type(lang) is not list:
                 gpt_answer_to_send = translator.translate(gpt_answer, dest=lang).text
             else:
@@ -114,8 +100,8 @@ async def friend_chat_message_handler(message: types.Message):
             await message.reply("[ERROR MESSAGE]\n\n" + ae.user_message)
 
 
-def open_ai_response(user: TgUser):
-    response = user.completion.create(
+async def open_ai_response(user: TgUser):
+    response = await user.completion.acreate(
         model="text-davinci-003",
         prompt=user.chat_history,
         temperature=0.9,
@@ -130,6 +116,42 @@ def open_ai_response(user: TgUser):
     tg_user.total_tokens = int(response['usage']['total_tokens'])
     tg_user.all_time_tokens += int(response['usage']['completion_tokens'])
     return response['choices'][0]['text']
+
+
+def resize_image(image: Image, length: int) -> Image:
+    """
+    Resize an image to a square. Can make an image bigger to make it fit or smaller if it doesn't fit. It also crops
+    part of the image.
+
+    :param image: Image to resize.
+    :param length: Width and height of the output image.
+    :return: Return the resized image.
+    """
+
+    if image.size[0] < image.size[1]:
+        resized_image = image.resize((length, int(image.size[1] * (length / image.size[0]))))
+
+        required_loss = (resized_image.size[1] - length)
+
+        resized_image = resized_image.crop(
+            box=(0, required_loss / 2, length, resized_image.size[1] - required_loss / 2))
+
+        return resized_image
+    else:
+        resized_image = image.resize((int(image.size[0] * (length / image.size[1])), length))
+
+        required_loss = resized_image.size[0] - length
+
+        resized_image = resized_image.crop(
+            box=(required_loss / 2, 0, resized_image.size[0] - required_loss / 2, length))
+
+        return resized_image
+
+
+def is_square(image):
+    if image.width != image.height:
+        return False
+    return True
 
 
 def register_handlers_common(dp: Dispatcher):
