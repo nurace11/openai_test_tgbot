@@ -57,6 +57,7 @@ async def friend_chat_message_handler(message: types.Message):
                                 " and in PNG format")
             return
 
+        await message.reply("Wait a minute...")
         if message.photo[3].height == 256:
             size = "256x256"
         elif message.photo[3].height == 512:
@@ -85,6 +86,7 @@ async def friend_chat_message_handler(message: types.Message):
             size="1024x1024"
         )
         image_url = response['data'][0]['url']
+        await message.reply("Wait a minute...")
         await bot.send_photo(message.chat.id, photo=image_url)
     else:
         if lang != 'en' and type(lang) is not list:
