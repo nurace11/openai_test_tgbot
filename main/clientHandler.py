@@ -1,7 +1,8 @@
 from aiogram import types, Dispatcher
-from create_bot import dp, usersDatabase
+from create_bot import dp, usersDatabase, bot
 from entity.TgUser import TgUser
 import openai
+from database import sqlite_db
 
 
 async def command_start(message: types.Message):
@@ -40,6 +41,12 @@ async def test_m(message: types.Message):
     await message.answer('photo')
 
 
+async def command_menu(message: types.Message):
+    data = await sqlite_db.sql_read()
+    for product in data: # [0] - photo, [1] - name, [2] - description, [3] - price
+        await bot.send_photo(message.from_user.id, product[0], f'{product[1]}\nCaption: {product[2]}\nPrice {[product[3]]}')
+
+
 # @dp.message_handler(lambda message: message.text.startswith('/'))
 async def non_existent_command(message: types.Message):
     await message.answer('command not found')
@@ -49,6 +56,7 @@ def register_handlers_client(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])
     dp.register_message_handler(command_clear, commands=['clear'])
     dp.register_message_handler(command_stats, commands=['stats'])
+    dp.register_message_handler(command_menu, commands=['menu'])
     dp.register_message_handler(non_existent_command, lambda message: message.text.startswith('/'))
 
 

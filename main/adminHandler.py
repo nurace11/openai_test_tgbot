@@ -1,8 +1,10 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram import types, Dispatcher
-from create_bot import dp, ownerTelegramId, usersDatabase
+from create_bot import dp, ownerTelegramId, bot, usersDatabase
 from aiogram.dispatcher.filters import Text
+from database import sqlite_db
+from keyboards import admin_kb
 
 
 async def print_users_database(message: types.Message):
@@ -39,13 +41,15 @@ async def print_user_chat(message: types.Message):
             await message.reply('Enter valid id. Id contains only numbers')
 
 
-
-
 class FSMAdmin(StatesGroup):
     photo = State()
     name = State()
     description = State()
     price = State()
+
+
+async def make_changes_command(message: types.Message):
+    await bot.send_message(message.from_user.id, 'Moderating', reply_markup=admin_kb.button_case_admin)
 
 
 # start of fsm dialogue
@@ -76,8 +80,6 @@ async def load_photo(message: types.Message, state: FSMContext):
         await message.reply('Good. Now enter a name')
 
 
-
-
 # @dp.message_handler(state=FSMAdmin.name)
 async def load_name(message: types.Message, state: FSMContext):
     if message.from_user.id == ownerTelegramId:
@@ -103,16 +105,14 @@ async def load_price(message: types.Message, state: FSMContext):
             data['price'] = message.text
         await message.reply('thank you')
 
-        async with state.proxy() as data:
-            await message.reply(str(data))
-
+        # async with state.proxy() as data:
+        #     await message.reply(str(data))
+        await sqlite_db.sql_add_command(state)
         await state.finish()
 
 
-
-
-
 def register_handlers_admin(dp: Dispatcher):
+    dp.register_message_handler(make_changes_command, commands=['moderator'])
     dp.register_message_handler(cm_start, commands=['load'], state=None)
     dp.register_message_handler(print_users_database, commands=['database'])
     dp.register_message_handler(print_user_chat, commands=['chat'])
