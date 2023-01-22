@@ -50,7 +50,6 @@ def register_handlers_client(dp: Dispatcher):
     dp.register_message_handler(command_clear, commands=['clear'])
     dp.register_message_handler(command_stats, commands=['stats'])
     dp.register_message_handler(non_existent_command, lambda message: message.text.startswith('/'))
-    # dp.register_message_handler(test_m, lambda message: in message.text,)
 
 
 
