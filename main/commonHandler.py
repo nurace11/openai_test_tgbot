@@ -8,6 +8,7 @@ from PIL import Image
 
 # import scheduler
 # import time
+import uuid
 
 translator = Translator()
 tg_user: TgUser
@@ -45,19 +46,23 @@ async def friend_chat_message_handler(message: types.Message):
         consumed_photo = message.photo[last_index]
         file = await bot.get_file(consumed_photo.file_id)
 
-        await bot.download_file(file.file_path, 'resources/images/from_tg.jpg')
-        im1 = Image.open(r'resources/images/from_tg.jpg')
+        rand_img_name = str(uuid.uuid4())
+
+        await bot.download_file(file.file_path, f'resources/images/from_tg{rand_img_name}.jpg')
+        im1 = Image.open(f'resources/images/from_tg{rand_img_name}.jpg')
 
         if not is_square(im1):
             im1 = resize_image(im1, 1024)
+        if not is_square(im1): # delete soon
+            im1 = resize_image(im1, 1024)
 
         # convert to png using Pillow
-        im1.save(r'resources/images/test.png')
+        im1.save(f'resources/images/test{rand_img_name}.png')
 
         size = "1024x1024"
 
         response = await openai.Image.acreate_variation(
-            image=open('resources/images/test.png', "rb"),
+            image=open(f'resources/images/test{rand_img_name}.png', "rb"),
             n=1,
             size=size
         )
@@ -127,7 +132,7 @@ def resize_image(image: Image, length: int) -> Image:
     :param length: Width and height of the output image.
     :return: Return the resized image.
     """
-
+    # 1200 < 601
     if image.size[0] < image.size[1]:
         resized_image = image.resize((length, int(image.size[1] * (length / image.size[0]))))
 

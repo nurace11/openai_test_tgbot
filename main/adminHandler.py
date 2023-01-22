@@ -56,6 +56,16 @@ async def cm_start(message: types.Message):
         await message.reply('Send photo')
 
 
+# @dp.message_handler(state='*', commands=['cancel'])
+# @dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
+async def cancel_adding_product_handler(message: types.Message, state: FSMContext):
+    context_state = await state.get_state()
+    if context_state is None:
+        return
+    await state.finish()
+    await message.reply('OK')
+
+
 # catch first answer and put it in the dictionary
 # @dp.message_handler(content_types=['photo'], state=FSMAdmin.photo)
 async def load_photo(message: types.Message, state: FSMContext):
@@ -64,6 +74,8 @@ async def load_photo(message: types.Message, state: FSMContext):
             data['photo'] = message.photo[0].file_id
         await FSMAdmin.next()
         await message.reply('Good. Now enter a name')
+
+
 
 
 # @dp.message_handler(state=FSMAdmin.name)
@@ -97,14 +109,7 @@ async def load_price(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-# @dp.message_handler(state='*', commands=['cancel'])
-# @dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
-async def cancel_adding_product_handler(message: types.Message, state: FSMContext):
-    context_state = await state.get_state()
-    if context_state is None:
-        return
-    await state.finish()
-    await message.reply('OK')
+
 
 
 def register_handlers_admin(dp: Dispatcher):
@@ -114,7 +119,6 @@ def register_handlers_admin(dp: Dispatcher):
 
     dp.register_message_handler(cancel_adding_product_handler, state='*', commands='cancel')
     dp.register_message_handler(cancel_adding_product_handler, Text(equals='cancel', ignore_case=True),state='*')
-
     dp.register_message_handler(load_photo, content_types=['photo'], state=FSMAdmin.photo)
     dp.register_message_handler(load_name, state=FSMAdmin.name)
     dp.register_message_handler(load_desc, state=FSMAdmin.description)
