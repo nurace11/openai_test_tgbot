@@ -1,7 +1,7 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram import types, Dispatcher
-from create_bot import dp, ownerTelegramId, bot, usersDatabase
+from create_bot import dp, admins_ids, bot, usersDatabase
 from aiogram.dispatcher.filters import Text
 from database import sqlite_db
 from keyboards import admin_kb
@@ -9,7 +9,7 @@ from keyboards import admin_kb
 
 async def print_users_database(message: types.Message):
 
-    if message.from_user.id == ownerTelegramId:
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
         text = ''
         if len(usersDatabase) == 0:
             text = 'Empty'
@@ -23,7 +23,7 @@ async def print_users_database(message: types.Message):
 
 # /chat
 async def print_user_chat(message: types.Message):
-    if message.from_user.id == ownerTelegramId:
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
         if len(message.text) < 6:
             await message.reply('Type an id')
             return
@@ -55,7 +55,7 @@ async def make_changes_command(message: types.Message):
 # start of fsm dialogue
 # @dp.message_handler(commands='load', state=None)
 async def cm_start(message: types.Message):
-    if message.from_user.id == ownerTelegramId:
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
         await FSMAdmin.photo.set()
         await message.reply('Send photo')
 
@@ -63,17 +63,18 @@ async def cm_start(message: types.Message):
 # @dp.message_handler(state='*', commands=['cancel'])
 # @dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
 async def cancel_adding_product_handler(message: types.Message, state: FSMContext):
-    context_state = await state.get_state()
-    if context_state is None:
-        return
-    await state.finish()
-    await message.reply('OK')
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
+        context_state = await state.get_state()
+        if context_state is None:
+            return
+        await state.finish()
+        await message.reply('OK')
 
 
 # catch first answer and put it in the dictionary
 # @dp.message_handler(content_types=['photo'], state=FSMAdmin.photo)
 async def load_photo(message: types.Message, state: FSMContext):
-    if message.from_user.id == ownerTelegramId:
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
         async with state.proxy() as data:
             data['photo'] = message.photo[0].file_id
         await FSMAdmin.next()
@@ -82,7 +83,7 @@ async def load_photo(message: types.Message, state: FSMContext):
 
 # @dp.message_handler(state=FSMAdmin.name)
 async def load_name(message: types.Message, state: FSMContext):
-    if message.from_user.id == ownerTelegramId:
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
         async with state.proxy() as data:
             data['name'] = message.text
         await FSMAdmin.next()
@@ -91,7 +92,7 @@ async def load_name(message: types.Message, state: FSMContext):
 
 # @dp.message_handler(state=FSMAdmin.description)
 async def load_desc(message: types.Message, state: FSMContext):
-    if message.from_user.id == ownerTelegramId:
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
         async with state.proxy() as data:
             data['description'] = message.text
         await FSMAdmin.next()
@@ -100,7 +101,7 @@ async def load_desc(message: types.Message, state: FSMContext):
 
 # @dp.message_handler(state=FSMAdmin.price)
 async def load_price(message: types.Message, state: FSMContext):
-    if message.from_user.id == ownerTelegramId:
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
         async with state.proxy() as data:
             data['price'] = message.text
         await message.reply('thank you')

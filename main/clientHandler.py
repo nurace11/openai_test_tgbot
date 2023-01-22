@@ -9,6 +9,15 @@ async def command_start(message: types.Message):
     print('[START COMMAND]')
     if not any(message.from_user.id == user.tg_id for user in usersDatabase):
         usersDatabase.add(TgUser(message.from_user.id, openai.Completion(), ""))
+        await message.answer("""
+                             This bot provides access to communicate with AI ChatGPT
+                             
+                             Start chatting by sending any message
+                             Send an image to get a variation of it
+                             Send message starting with 'Image ' to make AI generate an image from text"
+                             
+                             \n\npowered by OpenAI 
+        """)
 
 
 async def command_clear(message: types.Message):
@@ -18,7 +27,7 @@ async def command_clear(message: types.Message):
             user.completion = openai.Completion()
             user.total_tokens = 0
             user.chat_history = ''
-            await message.reply("[AMOGUS INFO MESSAGE] \n\nYour chat has been cleared. Thank you")
+            await message.reply("[INFO MESSAGE] \n\nYour chat has been cleared. Thank you")
 
 
 async def command_stats(message: types.Message):

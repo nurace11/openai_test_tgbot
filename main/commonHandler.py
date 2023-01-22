@@ -1,6 +1,8 @@
+import os
+
 from aiogram import types, Dispatcher
 from datetime import datetime
-from create_bot import bot, dp, ownerTelegramId, usersDatabase
+from create_bot import bot, dp, usersDatabase
 import openai
 from googletrans import Translator
 from entity.TgUser import TgUser
@@ -66,6 +68,9 @@ async def friend_chat_message_handler(message: types.Message):
             n=1,
             size=size
         )
+
+        os.remove(f"resources/images/from_tg{rand_img_name}.jpg")
+        os.remove(f'resources/images/test{rand_img_name}.png')
 
         await bot.send_photo(message.chat.id, photo=response['data'][0]['url'])
 
