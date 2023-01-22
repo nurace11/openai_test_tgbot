@@ -2,7 +2,7 @@ import os
 
 from aiogram import types, Dispatcher
 from datetime import datetime
-from create_bot import bot, dp, usersDatabase
+from create_bot import bot, dp, usersInMemoryDatabase, usersRepository
 import openai
 from googletrans import Translator
 from entity.TgUser import TgUser
@@ -18,15 +18,15 @@ tg_user: TgUser
 
 def define_tg_user(message: types.Message):
     found: bool = False
-    for user in usersDatabase:
+    for user in usersInMemoryDatabase:
         if user.tg_id == message.from_user.id:
             global tg_user
             tg_user = user
             found = True
-
     if not found:
         tg_user = TgUser(message.from_user.id, openai.Completion(), "")
-        usersDatabase.add(tg_user)
+        usersRepository.add_user(tg_user)
+        usersInMemoryDatabase.add(tg_user)
 
 
 async def friend_chat_message_handler(message: types.Message):

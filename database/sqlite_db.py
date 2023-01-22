@@ -1,6 +1,10 @@
 import sqlite3 as sq
 
 
+base: sq.Connection
+cur: sq.Cursor
+
+
 def sql_start():
     global base, cur
     base = sq.connect('tg_openai_bot.db')
@@ -13,6 +17,11 @@ def sql_start():
                  'PRIMARY KEY,'
                  'description TEXT,'
                  ' price TEXT)')
+    base.execute('CREATE TABLE IF NOT EXISTS tg_user('
+                 'id INT PRIMARY KEY, '
+                 'total_tokens INT, '
+                 'all_time_tokens INT'
+                 ')')
     base.commit()
 
 

@@ -1,5 +1,5 @@
 from aiogram import types, Dispatcher
-from create_bot import dp, usersDatabase, bot
+from create_bot import dp, usersInMemoryDatabase, usersRepository, bot, admins_ids
 from entity.TgUser import TgUser
 import openai
 from database import sqlite_db
@@ -7,24 +7,52 @@ from database import sqlite_db
 
 async def command_start(message: types.Message):
     print('[START COMMAND]')
-    if not any(message.from_user.id == user.tg_id for user in usersDatabase):
-        usersDatabase.add(TgUser(message.from_user.id, openai.Completion(), ""))
-        await message.answer("""
-                             This bot provides access to communicate with AI ChatGPT
-                             
-                             Start chatting by sending any message
-                             Send an image to get a variation of it
-                             Send message starting with 'Image ' to make AI generate an image from text"
-                             
-                             \n\npowered by OpenAI 
-        """)
+    if not any(message.from_user.id == user[0] for user in usersRepository.find_all()):
+        tg_user = TgUser(message.from_user.id, openai.Completion(), "")
+        usersInMemoryDatabase.add(tg_user)
+        usersRepository.add_user(tg_user)
+        await message.answer("This bot provides access to communicate with AI ChatGPT"
+                             "\n\nStart chatting by sending any message"
+                             "\nSend an image to get a variation of itSend message starting with 'Image '"
+                             " to make AI generate an image from text"
+                             "\n/help to get available commands"
+                             "\n\nDo NOT share your personal information"
+                             "\n\npowered by OpenAI "
+                             "\n ")
+    else:
+        await message.answer(
+            "Welcome again"
+            "\nThis bot provides access to communicate with AI ChatGPT"
+            "\n\nStart chatting by sending any message"
+            "\nSend an image to get a variation of itSend message starting with 'Image ' to make AI generate "
+            "an image from text"
+            "\n\nDo NOT share your personal information"
+            "\n/help to get available commands"
+            "\n\npowered by OpenAI "
+        )
+
+
+async def command_help(message: types.Message):
+    print(f"[HELP COMMAND] {message.from_user.id}")
+    text_to_send = "/clear to start a new chat with AI" \
+                   "\n/stats see your statistics"
+
+    if any(message.from_user.id == int(admin_id) for admin_id in admins_ids):
+        text_to_send += "\n\nADMIN COMMANDS" \
+                        "\n/database" \
+                        "\n/database_ram" \
+                        "\n/load" \
+                        "\n/moderator"
+
+    await message.answer(text_to_send)
 
 
 async def command_clear(message: types.Message):
     print(f'[CLEAR COMMAND] {message.from_user.id}')
-    for user in usersDatabase:
+    for user in usersInMemoryDatabase:
         if message.chat.id == user.tg_id:
             user.completion = openai.Completion()
+            usersRepository.update_user_by_id(message.chat.id, user)
             user.total_tokens = 0
             user.chat_history = ''
             await message.reply("[INFO MESSAGE] \n\nYour chat has been cleared. Thank you")
@@ -32,7 +60,7 @@ async def command_clear(message: types.Message):
 
 async def command_stats(message: types.Message):
     print(f"[STATS COMMAND] {message.from_user.id}")
-    for user in usersDatabase:
+    for user in usersInMemoryDatabase:
         if message.chat.id == user.tg_id:
             await message.reply(f"ID{message.chat.id}"
                                 f"\n\nYour current completion tokens: " + str(user.total_tokens) + ". Maximum is 4000" +
@@ -40,7 +68,7 @@ async def command_stats(message: types.Message):
                                 "\n\n1 token ~= 4 letters or 1 token ~= 0.75 words")
 
 
-@dp.message_handler(lambda message: 'taxi' in message.text) # use Text filter instead of lambda
+@dp.message_handler(lambda message: 'taxi' in message.text)  # use Text filter instead of lambda
 async def test_m(message: types.Message):
     await message.answer('taxi')
 
@@ -51,9 +79,12 @@ async def test_m(message: types.Message):
 
 
 async def command_menu(message: types.Message):
+    print(f"[MENU COMMAND] {message.from_user.id}")
     data = await sqlite_db.sql_read()
-    for product in data: # [0] - photo, [1] - name, [2] - description, [3] - price
-        await bot.send_photo(message.from_user.id, product[0], f'{product[1]}\nCaption: {product[2]}\nPrice {[product[3]]}')
+    for product in data:  # [0] - photo, [1] - name, [2] - description, [3] - price
+        print(product[0])
+        await bot.send_photo(message.from_user.id, product[0],
+                             f'{product[1]}\nCaption: {product[2]}\nPrice {[product[3]]}')
 
 
 # @dp.message_handler(lambda message: message.text.startswith('/'))
@@ -63,10 +94,8 @@ async def non_existent_command(message: types.Message):
 
 def register_handlers_client(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])
+    dp.register_message_handler(command_help, commands=['help'])
     dp.register_message_handler(command_clear, commands=['clear'])
     dp.register_message_handler(command_stats, commands=['stats'])
     dp.register_message_handler(command_menu, commands=['menu'])
     dp.register_message_handler(non_existent_command, lambda message: message.text.startswith('/'))
-
-
-
