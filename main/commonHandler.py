@@ -72,7 +72,7 @@ async def friend_chat_message_handler(message: types.Message):
         os.remove(f"resources/images/from_tg{rand_img_name}.jpg")
         os.remove(f'resources/images/test{rand_img_name}.png')
 
-        await bot.send_photo(message.chat.id, photo=response['data'][0]['url'])
+        await bot.send_photo(message.chat.id, photo=response['data'][0]['url'], reply_to_message_id=message.message_id)
 
     # Generate image
     elif message.text.lower().startswith('image '):
