@@ -1,6 +1,7 @@
 from aiogram import types, Dispatcher
 from create_bot import dp, usersInMemoryDatabase, usersRepository, bot, admins_ids
 from entity.TgUser import TgUser
+from keyboards import inline_user_settings_keyobard
 import openai
 from database import sqlite_db
 
@@ -87,6 +88,43 @@ async def command_menu(message: types.Message):
                              f'{product[1]}\nCaption: {product[2]}\nPrice {[product[3]]}')
 
 
+async def command_settings(message: types.Message):
+    await message.answer('Auto translate your messages ',
+                         reply_markup=inline_user_settings_keyobard.inline_keyboard)
+
+
+@dp.callback_query_handler(lambda callback: callback.data.startswith('autoTranslate_'))
+async def callback_handle(callback: types.CallbackQuery):
+    print('callback received', callback)
+    which = callback.data.split('_')[1]
+    edit_reply_markup = callback.message.reply_markup
+    user: TgUser
+    for user in usersInMemoryDatabase:
+        if callback.from_user.id == user.tg_id:
+            print(user)
+            if which == 'from':
+                user.auto_translate_from_user = not user.auto_translate_from_user
+                if user.auto_translate_from_user is True:
+                    edit_reply_markup.inline_keyboard[0][0].text = 'Translate your messages for GPT-3 +'
+                    print('q')
+                else:
+                    edit_reply_markup.inline_keyboard[0][0].text = 'Translate your messages for GPT-3 -'
+                    print('d')
+            else:
+                user.auto_translate_to_user = not user.auto_translate_to_user
+                if user.auto_translate_to_user is True:
+                    edit_reply_markup.inline_keyboard[1][0].text = 'Translate messages from GPT-3  +'
+                else:
+                    edit_reply_markup.inline_keyboard[1][0].text = 'Translate messages from GPT-3 -'
+
+    print(callback.message.reply_markup)
+
+    await bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id,
+                                        reply_markup=edit_reply_markup)
+
+    await callback.answer()
+
+
 # @dp.message_handler(lambda message: message.text.startswith('/'))
 async def non_existent_command(message: types.Message):
     await message.answer('command not found')
@@ -98,4 +136,5 @@ def register_handlers_client(dp: Dispatcher):
     dp.register_message_handler(command_clear, commands=['clear'])
     dp.register_message_handler(command_stats, commands=['stats'])
     dp.register_message_handler(command_menu, commands=['menu'])
+    dp.register_message_handler(command_settings, commands=['settings'])
     dp.register_message_handler(non_existent_command, lambda message: message.text.startswith('/'))

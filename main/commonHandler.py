@@ -29,67 +29,64 @@ def define_tg_user(message: types.Message):
         usersInMemoryDatabase.add(tg_user)
 
 
+async def variations_dalle(message:types.Message):
+    print(datetime.now(), '[VARIATIONS HANDLER] From:', message.from_user.id, 'In chat', message.chat.id, 'variations',
+          message.text)
+
+    print("[VARIATIONS]")
+    await message.reply("Wait a minute...")
+
+    last_index = len(message.photo) - 1
+    consumed_photo = message.photo[last_index]
+    file = await bot.get_file(consumed_photo.file_id)
+
+    rand_img_name = str(uuid.uuid4())
+
+    await bot.download_file(file.file_path, f'resources/images/from_tg{rand_img_name}.jpg')
+    im1 = Image.open(f'resources/images/from_tg{rand_img_name}.jpg')
+
+    if not is_square(im1):
+        im1 = resize_image(im1, 1024)
+    if not is_square(im1):  # delete soon
+        im1 = resize_image(im1, 1024)
+
+    # convert to png using Pillow
+    im1.save(f'resources/images/test{rand_img_name}.png')
+
+    size = "1024x1024"
+
+    response = await openai.Image.acreate_variation(
+        image=open(f'resources/images/test{rand_img_name}.png', "rb"),
+        n=1,
+        size=size
+    )
+
+    os.remove(f"resources/images/from_tg{rand_img_name}.jpg")
+    os.remove(f'resources/images/test{rand_img_name}.png')
+
+    await bot.send_photo(message.chat.id, photo=response['data'][0]['url'], reply_to_message_id=message.message_id)
+
+
+async def generate_image_dalle_handler(message: types.Message):
+    response = await openai.Image.acreate(
+        prompt=message.text[6:],
+        n=1,
+        size="1024x1024"
+    )
+    image_url = response['data'][0]['url']
+    await message.reply("Wait a minute...")
+    await bot.send_photo(message.chat.id, photo=image_url)
+
+
 async def friend_chat_message_handler(message: types.Message):
     print(datetime.now(), '[FRIEND CHAT MESSAGE] From:', message.from_user.id, 'In chat', message.chat.id, 'text:',
           message.text)
     define_tg_user(message)
 
-    lang = translator.detect(message.text).lang
-    print("Lang: ", lang)
-
-    print(len(message.photo))
-
-    # Variations
-    if len(message.photo) > 0:
-        print("[VARIATIONS]")
-        await message.reply("Wait a minute...")
-
-        last_index = len(message.photo) - 1
-        consumed_photo = message.photo[last_index]
-        file = await bot.get_file(consumed_photo.file_id)
-
-        rand_img_name = str(uuid.uuid4())
-
-        await bot.download_file(file.file_path, f'resources/images/from_tg{rand_img_name}.jpg')
-        im1 = Image.open(f'resources/images/from_tg{rand_img_name}.jpg')
-
-        if not is_square(im1):
-            im1 = resize_image(im1, 1024)
-        if not is_square(im1): # delete soon
-            im1 = resize_image(im1, 1024)
-
-        # convert to png using Pillow
-        im1.save(f'resources/images/test{rand_img_name}.png')
-
-        size = "1024x1024"
-
-        response = await openai.Image.acreate_variation(
-            image=open(f'resources/images/test{rand_img_name}.png', "rb"),
-            n=1,
-            size=size
-        )
-
-        os.remove(f"resources/images/from_tg{rand_img_name}.jpg")
-        os.remove(f'resources/images/test{rand_img_name}.png')
-
-        await bot.send_photo(message.chat.id, photo=response['data'][0]['url'], reply_to_message_id=message.message_id)
-
-    # Generate image
-    elif message.text.lower().startswith('image '):
-        response = await openai.Image.acreate(
-            prompt=message.text[6:],
-            n=1,
-            size="1024x1024"
-        )
-        image_url = response['data'][0]['url']
-        await message.reply("Wait a minute...")
-        await bot.send_photo(message.chat.id, photo=image_url)
+    if tg_user.auto_translate_from_user is True or tg_user.auto_translate_to_user is True:
+        await friend_chat_with_translate(message)
     else:
-        if lang != 'en' and type(lang) is not list:
-            message_to_send = translator.translate(message.text).text
-            print("[TRANSLATED] ", message_to_send)
-        else:
-            message_to_send = message.text
+        message_to_send = message.text
 
         if len(tg_user.chat_history) == 0:
             tg_user.chat_history = f"You:{message_to_send} \nFriend:"
@@ -98,16 +95,42 @@ async def friend_chat_message_handler(message: types.Message):
 
         try:
             gpt_answer = await open_ai_response(tg_user)
+            await bot.send_message(message.chat.id, gpt_answer)
+            tg_user.chat_history += gpt_answer
+        except openai.error.OpenAIError as ae:
+            await message.reply("[ERROR MESSAGE]\n\n" + ae.user_message)
+
+
+async def friend_chat_with_translate(message):
+    lang = translator.detect(message.text).lang
+    print("Lang: ", lang)
+
+    if lang != 'en' and type(lang) is not list:
+        message_to_send = translator.translate(message.text).text
+        print("[TRANSLATED] ", message_to_send)
+    else:
+        message_to_send = message.text
+
+    if len(tg_user.chat_history) == 0:
+        tg_user.chat_history = f"You:{message_to_send} \nFriend:"
+    else:
+        tg_user.chat_history = tg_user.chat_history + f"\nYou: {message_to_send} \nFriend:"
+
+    try:
+        gpt_answer = await open_ai_response(tg_user)
+        if tg_user.auto_translate_to_user is True:
             if lang != 'en' and type(lang) is not list:
                 gpt_answer_to_send = translator.translate(gpt_answer, dest=lang).text
             else:
                 gpt_answer_to_send = gpt_answer
+        else:
+            gpt_answer_to_send = gpt_answer
 
-            await bot.send_message(message.chat.id, gpt_answer_to_send)
-            tg_user.chat_history += gpt_answer
+        await bot.send_message(message.chat.id, gpt_answer_to_send)
+        tg_user.chat_history += gpt_answer
 
-        except openai.error.OpenAIError as ae:
-            await message.reply("[ERROR MESSAGE]\n\n" + ae.user_message)
+    except openai.error.OpenAIError as ae:
+        await message.reply("[ERROR MESSAGE]\n\n" + ae.user_message)
 
 
 async def open_ai_response(user: TgUser):
@@ -165,4 +188,7 @@ def is_square(image):
 
 
 def register_handlers_common(dp: Dispatcher):
+    dp.register_message_handler(variations_dalle, content_types=types.ContentType.PHOTO)
+    dp.register_message_handler(generate_image_dalle_handler, lambda message: message.text.startswith('Image '))
     dp.register_message_handler(friend_chat_message_handler, content_types=types.ContentTypes.ANY)
+

@@ -13,7 +13,7 @@ print(config['BOT']['TOKEN'])
 # except openai.error.OpenAIError as ae:
 #     print('Au' + ae.user_message)
 
-if not any(1 == u for u in [3,4,2,5]):
+if not any(1 == u for u in [3, 4, 2, 5]):
     print("no 1")
 
 
