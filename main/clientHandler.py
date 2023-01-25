@@ -89,6 +89,22 @@ async def command_menu(message: types.Message):
 
 
 async def command_settings(message: types.Message):
+    user: TgUser
+    for user in usersInMemoryDatabase:
+        if user.auto_translate_from_user is True:
+            inline_user_settings_keyobard.inline_keyboard.inline_keyboard[0][0].text = \
+                'Translate your messages for GPT-3 +'
+        else:
+            inline_user_settings_keyobard.inline_keyboard.inline_keyboard[0][0].text = \
+                'Translate your messages for GPT-3 -'
+
+        if user.auto_translate_to_user is True:
+            inline_user_settings_keyobard.inline_keyboard.inline_keyboard[1][0].text = \
+                'Translate messages from GPT-3  +'
+        else:
+            inline_user_settings_keyobard.inline_keyboard.inline_keyboard[1][0].text = \
+                'Translate messages from GPT-3  -'
+
     await message.answer('Auto translate your messages ',
                          reply_markup=inline_user_settings_keyobard.inline_keyboard)
 
@@ -106,10 +122,8 @@ async def callback_handle(callback: types.CallbackQuery):
                 user.auto_translate_from_user = not user.auto_translate_from_user
                 if user.auto_translate_from_user is True:
                     edit_reply_markup.inline_keyboard[0][0].text = 'Translate your messages for GPT-3 +'
-                    print('q')
                 else:
                     edit_reply_markup.inline_keyboard[0][0].text = 'Translate your messages for GPT-3 -'
-                    print('d')
             else:
                 user.auto_translate_to_user = not user.auto_translate_to_user
                 if user.auto_translate_to_user is True:
@@ -117,8 +131,7 @@ async def callback_handle(callback: types.CallbackQuery):
                 else:
                     edit_reply_markup.inline_keyboard[1][0].text = 'Translate messages from GPT-3 -'
 
-    print(callback.message.reply_markup)
-
+    # todo: save auto_translate_* states in db
     await bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id,
                                         reply_markup=edit_reply_markup)
 
