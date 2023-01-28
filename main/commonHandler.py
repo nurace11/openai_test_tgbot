@@ -55,11 +55,19 @@ async def variations_dalle(message:types.Message):
 
     size = "1024x1024"
 
-    response = await openai.Image.acreate_variation(
-        image=open(f'resources/images/test{rand_img_name}.png', "rb"),
-        n=1,
-        size=size
-    )
+    if tg_user.trial:
+        response = await openai.Image.acreate_variation(
+            image=open(f'resources/images/test{rand_img_name}.png', "rb"),
+            n=1,
+            size=size
+        )
+    else:
+        response = await openai.Image.acreate_variation(
+            api_key=tg_user.api_key,
+            image=open(f'resources/images/test{rand_img_name}.png', "rb"),
+            n=1,
+            size=size
+        )
 
     os.remove(f"resources/images/from_tg{rand_img_name}.jpg")
     os.remove(f'resources/images/test{rand_img_name}.png')
@@ -68,11 +76,20 @@ async def variations_dalle(message:types.Message):
 
 
 async def generate_image_dalle_handler(message: types.Message):
-    response = await openai.Image.acreate(
-        prompt=message.text[6:],
-        n=1,
-        size="1024x1024"
-    )
+    if tg_user.trial:
+        response = await openai.Image.acreate(
+            prompt=message.text[6:],
+            n=1,
+            size="1024x1024"
+        )
+    else:
+        response = await openai.Image.acreate(
+            api_key=tg_user.api_key,
+            prompt=message.text[6:],
+            n=1,
+            size="1024x1024"
+        )
+
     image_url = response['data'][0]['url']
     await message.reply("Wait a minute...")
     await bot.send_photo(message.chat.id, photo=image_url)
@@ -134,16 +151,29 @@ async def friend_chat_with_translate(message):
 
 
 async def open_ai_response(user: TgUser):
-    response = await user.completion.acreate(
-        model="text-davinci-003",
-        prompt=user.chat_history,
-        temperature=0.9,
-        max_tokens=2000,
-        top_p=1.0,
-        frequency_penalty=0.5,
-        presence_penalty=0.0,
-        stop=["You:"]
-    )
+    if user.trial:
+        response = await user.completion.acreate(
+            model="text-davinci-003",
+            prompt=user.chat_history,
+            temperature=0.9,
+            max_tokens=2000,
+            top_p=1.0,
+            frequency_penalty=0.5,
+            presence_penalty=0.0,
+            stop=["You:"]
+        )
+    else:
+        response = await user.completion.acreate(
+            api_key=user.api_key,
+            model="text-davinci-003",
+            prompt=user.chat_history,
+            temperature=0.9,
+            max_tokens=2000,
+            top_p=1.0,
+            frequency_penalty=0.5,
+            presence_penalty=0.0,
+            stop=["You:"]
+        )
 
     print(response['usage'], response['choices'][0]['text'])
     tg_user.total_tokens = int(response['usage']['total_tokens'])
