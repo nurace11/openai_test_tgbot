@@ -106,7 +106,7 @@ async def friend_chat_message_handler(message: types.Message):
         message_to_send = message.text
 
         if len(tg_user.chat_history) == 0:
-            tg_user.chat_history = f"You:{message_to_send} \nFriend:"
+            tg_user.chat_history = f"You: {message_to_send} \nFriend:"
         else:
             tg_user.chat_history = tg_user.chat_history + f"\nYou: {message_to_send} \nFriend:"
 
@@ -147,6 +147,7 @@ async def friend_chat_with_translate(message):
         tg_user.chat_history += gpt_answer
 
     except openai.error.OpenAIError as ae:
+        print(ae)
         await message.reply("[ERROR MESSAGE]\n\n" + ae.user_message)
 
 

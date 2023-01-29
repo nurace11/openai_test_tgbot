@@ -2,7 +2,6 @@ from database import sqlite_db
 from entity.TgUser import TgUser
 from openai import Completion
 
-
 def find_all():
     return sqlite_db.cur.execute('SELECT * FROM tg_user').fetchall()
 

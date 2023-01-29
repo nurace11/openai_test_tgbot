@@ -89,24 +89,31 @@ async def command_menu(message: types.Message):
 
 
 async def command_settings(message: types.Message):
+    print("SETTINGS COMMAND ")
     user: TgUser
     for user in usersInMemoryDatabase:
-        if user.auto_translate_from_user is True:
-            inline_user_settings_keyobard.inline_keyboard.inline_keyboard[0][0].text = \
-                'Translate your messages for GPT-3 +'
-        else:
-            inline_user_settings_keyobard.inline_keyboard.inline_keyboard[0][0].text = \
-                'Translate your messages for GPT-3 -'
+        if user.tg_id == message.from_user.id:
+            if user.settings_message_id is not None:
+                await bot.delete_message(message.chat.id, user.settings_message_id)
 
-        if user.auto_translate_to_user is True:
-            inline_user_settings_keyobard.inline_keyboard.inline_keyboard[1][0].text = \
-                'Translate messages from GPT-3  +'
-        else:
-            inline_user_settings_keyobard.inline_keyboard.inline_keyboard[1][0].text = \
-                'Translate messages from GPT-3  -'
+            if user.auto_translate_from_user is True:
+                inline_user_settings_keyobard.inline_keyboard.inline_keyboard[0][0].text = \
+                    'Translate your messages for GPT-3 +'
+            else:
+                inline_user_settings_keyobard.inline_keyboard.inline_keyboard[0][0].text = \
+                    'Translate your messages for GPT-3 -'
 
-    await message.answer('Auto translate your messages ',
-                         reply_markup=inline_user_settings_keyobard.inline_keyboard)
+            if user.auto_translate_to_user is True:
+                inline_user_settings_keyobard.inline_keyboard.inline_keyboard[1][0].text = \
+                    'Translate messages from GPT-3  +'
+            else:
+                inline_user_settings_keyobard.inline_keyboard.inline_keyboard[1][0].text = \
+                    'Translate messages from GPT-3  -'
+
+            msg = await message.answer('Auto translate your messages ',
+                                       reply_markup=inline_user_settings_keyobard.inline_keyboard)
+            print(msg)
+            user.settings_message_id = int(msg["message_id"])
 
 
 @dp.callback_query_handler(lambda callback: callback.data.startswith('autoTranslate_'))
