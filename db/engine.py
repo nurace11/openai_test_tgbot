@@ -1,6 +1,6 @@
 from typing import Union
 
-
+import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
@@ -16,7 +16,7 @@ def create_async_engine(url: Union[URL, str]) -> AsyncEngine:
     return engine
 
 
-async def proceed_schemas(engine: AsyncEngine, metadata) -> None:
+async def proceed_schemas(engine: AsyncEngine, metadata: sqlalchemy.MetaData) -> None:
     async with engine.connect() as conn:
         await conn.run_sync(metadata.create_all)
 

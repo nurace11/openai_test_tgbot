@@ -8,6 +8,10 @@ from .base import BaseModel
 class User(BaseModel):
     __tablename__ = 'users_tg'
 
+    def __init__(self, user_id, username):
+        self.user_id = user_id
+        self.username = username
+
     # Id
     user_id = Column(Integer, unique=True, nullable=False, primary_key=True)
 
